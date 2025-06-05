@@ -53,12 +53,25 @@ export default function AuthScreen() {
 
       if (auth.success) {
         router.replace("/home");
+      } else if (auth.error === "lockout") {
+        // Handle too many failed attempts
+        setError("Too many failed attempts. Please try again later.");
+        setTimeout(() => {
+          setError("You can try using your PIN instead");
+        }, 2000);
+      } else if (auth.error === "user_cancel") {
+        // User canceled, provide alternative
+        setError("Authentication canceled. Try again or use PIN.");
       } else {
         setError("Authentication failed. Please try again.");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
       console.error(err);
+      // Add manual entry option after error
+      setTimeout(() => {
+        setError("You can try using your PIN instead");
+      }, 2000);
     } finally {
       setIsAuthenticating(false);
     }

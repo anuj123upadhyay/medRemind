@@ -1,21 +1,43 @@
 {
   "expo": {
-    "name": "medremind",
+    "name": "MedRemind",
     "slug": "medremind",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "medremind",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anujupadhyay.MedRemind",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "VIBRATE",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "WAKE_LOCK",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM",
+        "USE_EXACT_ALARM",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
+      ],
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.anujupadhyay.MedRemind"
     },
     "web": {
       "bundler": "metro",
@@ -23,6 +45,16 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#ffffff",
+          "androidMode": "default",
+          "androidCollapsedTitle": "MedRemind",
+          "iosDisplayInForeground": true
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -32,10 +64,42 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow MedRemind to use Face ID to secure your medication data."
+        }
+      ],
+      "expo-image-picker",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "The app needs to access your calendar to schedule medication reminders."
+        }
       ]
     ],
+    "extra": {
+      "eas": {
+        "projectId": "68386efa00379840dfe3"
+      }
+    },
     "experiments": {
       "typedRoutes": true
+    },
+    "privacy": "public",
+    "description": "MedRemind is your personal medication assistant, helping you track, remember, and manage your medications effectively. Features include smart reminders, supply tracking, adherence reports, and comprehensive medication management.",
+    "primaryColor": "#e66578",
+    "keywords": ["medication", "reminder", "healthcare", "pills", "medical", "health", "pharmacy", "dosage", "prescription"],
+    "category": "medical",
+    "githubUrl": "https://github.com/anujupadhyay/medremind",
+    "ios": {
+      "bundleIdentifier": "com.anujupadhyay.MedRemind",
+      "buildNumber": "1"
     }
+    
+    
   }
 }

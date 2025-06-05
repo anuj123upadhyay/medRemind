@@ -1,50 +1,173 @@
-# Welcome to your Expo app 👋
+# 💊 MedRemind - Medication Management App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+MedRemind is your personal medication assistant, helping you track, remember, and manage your medications effectively.
 
-## Get started
+![MedRemind Logo](./assets/images/icon.png)
 
-1. Install dependencies
+## 🌟 Features
 
-   ```bash
-   npm install
-   ```
+- 📅 **Smart Medication Scheduling** - Set custom reminders for each medication
+- 📊 **Adherence Tracking** - Monitor your medication compliance with detailed statistics
+- 📈 **Progress Reports** - Generate CSV reports for healthcare providers
+- 🔒 **Secure Storage** - Biometric authentication and encrypted data storage
+- 📱 **Cross-Platform** - Works on iOS, Android, and Web
+- 🌙 **Dark/Light Theme** - Customizable interface
+- 📋 **Medication Management** - Add, edit, and track medication supplies
+- 🔔 **Smart Notifications** - Customizable reminder system
+- 📋 **Export Data** - Generate detailed adherence reports
 
-2. Start the app
+## 🛠️ Tech Stack
 
-   ```bash
-    npx expo start
-   ```
+- **Framework**: React Native with Expo
+- **Language**: TypeScript
+- **Navigation**: Expo Router
+- **Backend**: Appwrite
+- **Authentication**: Expo Local Authentication (Biometric)
+- **Notifications**: Expo Notifications
+- **Storage**: AsyncStorage + Appwrite Database
+- **Styling**: Custom Design System
 
-In the output, you'll find options to open the app in a
+## 📱 Screenshots
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Home Screen | Medications | Calendar | Statistics |
+|-------------|-------------|----------|------------|
+| ![Home](./screenshots/home.png) | ![Medications](./screenshots/medications.png) | ![Calendar](./screenshots/calendar.png) | ![Stats](./screenshots/stats.png) |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🚀 Getting Started
 
-## Get a fresh project
+### Prerequisites
 
-When you're ready, run:
+- Node.js (v16 or higher)
+- npm or yarn
+- Expo CLI
+- iOS Simulator (for iOS development)
+- Android Studio (for Android development)
 
+### Installation
+
+1. **Clone the repository**
 ```bash
-npm run reset-project
+git clone https://github.com/anujupadhyay/medremind.git
+cd medremind
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. **Install dependencies**
+```bash
+npm install
+```
 
-## Learn more
+3. **Set up environment variables**
+```bash
+cp .env.example .env
+# Edit .env with your Appwrite credentials
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+4. **Start the development server**
+```bash
+npx expo start
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Environment Setup
 
-## Join the community
+1. Create an [Appwrite](https://appwrite.io/) account
+2. Create a new project and database
+3. Set up collections for medications, reminders, and dose history
+4. Copy your project credentials to `.env` file
 
-Join our community of developers creating universal apps.
+## 📦 Building for Production
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Android APK
+```bash
+# Install EAS CLI
+npm install -g @expo/eas-cli
+
+# Login to Expo
+eas login
+
+# Build APK
+eas build --platform android --profile production-apk
+```
+
+### iOS
+```bash
+# Build for iOS
+eas build --platform ios
+```
+
+## 🏗️ Project Structure
+
+```
+medRemind/
+├── app/                    # App screens and navigation
+│   ├── (tabs)/            # Tab navigation screens
+│   ├── calendar/          # Calendar functionality
+│   ├── history/           # Medication history
+│   ├── medications/       # Medication management
+│   ├── settings/          # App settings
+│   └── stats/             # Statistics and reports
+├── components/            # Reusable components
+├── services/             # API and data services
+├── utils/                # Utility functions
+├── assets/               # Images, fonts, and static assets
+├── types/                # TypeScript type definitions
+└── config/               # Configuration files
+```
+
+## 🔧 Key Features Explained
+
+### Medication Tracking
+- Add medications with custom schedules
+- Set reminders for different times of day
+- Track supply levels and refill dates
+- Support for various medication types (pills, liquid, injections)
+
+### Smart Reminders
+- Customizable notification sounds and vibrations
+- Snooze functionality for flexibility
+- Automatic rescheduling for missed doses
+- Intelligent reminder timing
+
+### Adherence Monitoring
+- Real-time adherence percentage calculation
+- Weekly and monthly statistics
+- Visual progress indicators
+- Exportable reports for healthcare providers
+
+### Security & Privacy
+- Biometric authentication (Face ID/Touch ID/Fingerprint)
+- Local data encryption
+- Secure cloud synchronization
+- Privacy-focused design
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Contact
+
+- **Developer**: Anuj Upadhyay
+- **Email**: anuju760@gmail.com
+- **GitHub**: [@anujupadhyay](https://github.com/anujupadhyay)
+
+## ⚠️ Disclaimer
+
+MedRemind is not a medical device and should not replace professional medical advice. Always consult with healthcare professionals for medical decisions.
+
+## 🙏 Acknowledgments
+
+- Built with [Expo](https://expo.dev/)
+- Backend powered by [Appwrite](https://appwrite.io/)
+- Icons from [Expo Vector Icons](https://docs.expo.dev/guides/icons/)
+- Inspired by the need for better medication management tools
+
+---
+
+**Made with ❤️ for better healthcare management**

@@ -10,41 +10,107 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import {
-  getDoseHistory,
-  getMedications,
-  DoseHistory,
-  Medication,
-  clearAllData,
-} from "../../utils/storage";
+  getUserMedicines,
+} from "../../services/medicationService";
+import { 
+  getReminderHistory 
+} from "../../services/doseHistoryService";
+import { Medicine } from "../../services/collections";
+import { account } from "../../services/appwrite";
+import { useTheme } from "../../utils/ThemeContext";
+import {
+  borderRadius,
+  createCommonStyles,
+  shadow,
+  spacing,
+  typography,
+} from "../../utils/StyleSystem";
+import Header from "../../components/Header";
+import Button from "../../components/Button";
+
+// Legacy type definitions for transition period
+interface Medication {
+  id: string;
+  name: string;
+  medicineName: string;
+  dosage: string;
+  times: string[];
+  startDate: string;
+  duration: string;
+  color: string;
+  reminderEnabled: boolean;
+  currentSupply: number;
+  totalSupply: number;
+  refillAt: number;
+  refillReminder: boolean;
+  lastRefillDate?: string;
+  medicineId: string;
+}
+
+interface DoseHistory {
+  id: string;
+  medicationId: string;
+  timestamp: string;
+  taken: boolean;
+}
 
 type EnrichedDoseHistory = DoseHistory & { medication?: Medication };
 
 export default function HistoryScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [history, setHistory] = useState<EnrichedDoseHistory[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<
     "all" | "taken" | "missed"
   >("all");
+  const commonStyles = createCommonStyles(theme);
 
   const loadHistory = useCallback(async () => {
     try {
-      const [doseHistory, medications] = await Promise.all([
-        getDoseHistory(),
-        getMedications(),
+      // Get current user ID for reminder history
+      const userId = (await account.get()).$id;
+      
+      // Get all-time history
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setFullYear(startDate.getFullYear() - 1); // Get past year of data
+      
+      const [allMedicines, reminderHistory] = await Promise.all([
+        getUserMedicines(),
+        getReminderHistory(userId, startDate, endDate),
       ]);
 
+      // Convert Medicine objects to Medication format for compatibility
+      const convertedMedications: Medication[] = allMedicines.map((medicine: any) => ({
+        ...medicine,
+        id: medicine.$id,
+        name: medicine.medicineName,
+        medicineId: medicine.$id,
+        startDate: new Date(medicine.startDate).toISOString(),
+        duration: medicine.duration === -1 ? "Ongoing" : `${medicine.duration} days`,
+        color: medicine.color || "#E91E63",
+      }));
+
+      // Convert reminder history to DoseHistory format
+      const convertedDoseHistory: DoseHistory[] = reminderHistory.map((reminder: any) => ({
+        id: reminder.$id,
+        medicationId: reminder.medicineId,
+        timestamp: new Date(reminder.scheduledTime || new Date()).toISOString(),
+        taken: reminder.status === 'taken'
+      }));
+
       // Combine history with medication details
-      const enrichedHistory = doseHistory.map((dose) => ({
+      const enrichedHistory = convertedDoseHistory.map((dose) => ({
         ...dose,
-        medication: medications.find((med) => med.id === dose.medicationId),
+        medication: convertedMedications.find((med) => med.medicineId === dose.medicationId),
       }));
 
       setHistory(enrichedHistory);
     } catch (error) {
       console.error("Error loading history:", error);
+      Alert.alert("Error", "Failed to load medication history. Please try again.");
     }
   }, []);
 
@@ -92,9 +158,10 @@ export default function HistoryScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await clearAllData();
+              // For now, just show a message that this feature needs to be implemented
+              // In a full implementation, you would call Appwrite delete functions
+              Alert.alert("Feature Not Available", "Data clearing functionality will be implemented with proper Appwrite data management.");
               await loadHistory();
-              Alert.alert("Success", "All data has been cleared successfully");
             } catch (error) {
               console.error("Error clearing data:", error);
               Alert.alert("Error", "Failed to clear data. Please try again.");
@@ -106,25 +173,10 @@ export default function HistoryScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={["#6cd446", "#6cd446"]}
-        style={styles.headerGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      />
+    <View style={commonStyles.container}>
+      <Header title="History Log" onBack={() => router.back()} />
 
       <View style={styles.content}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={28} color="#1a8e2d" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>History Log</Text>
-        </View>
-
         <View style={styles.filtersContainer}>
           <ScrollView
             horizontal
@@ -135,13 +187,19 @@ export default function HistoryScreen() {
               style={[
                 styles.filterButton,
                 selectedFilter === "all" && styles.filterButtonActive,
+                { borderColor: theme.border },
+                selectedFilter === "all" && {
+                  borderColor: theme.primary,
+                  backgroundColor: theme.primary + "10",
+                },
               ]}
               onPress={() => setSelectedFilter("all")}
             >
               <Text
                 style={[
                   styles.filterText,
-                  selectedFilter === "all" && styles.filterTextActive,
+                  { color: theme.text },
+                  selectedFilter === "all" && { color: theme.primary },
                 ]}
               >
                 All
@@ -151,13 +209,19 @@ export default function HistoryScreen() {
               style={[
                 styles.filterButton,
                 selectedFilter === "taken" && styles.filterButtonActive,
+                { borderColor: theme.border },
+                selectedFilter === "taken" && {
+                  borderColor: theme.success,
+                  backgroundColor: theme.success + "10",
+                },
               ]}
               onPress={() => setSelectedFilter("taken")}
             >
               <Text
                 style={[
                   styles.filterText,
-                  selectedFilter === "taken" && styles.filterTextActive,
+                  { color: theme.text },
+                  selectedFilter === "taken" && { color: theme.success },
                 ]}
               >
                 Taken
@@ -167,13 +231,19 @@ export default function HistoryScreen() {
               style={[
                 styles.filterButton,
                 selectedFilter === "missed" && styles.filterButtonActive,
+                { borderColor: theme.border },
+                selectedFilter === "missed" && {
+                  borderColor: theme.error,
+                  backgroundColor: theme.error + "10",
+                },
               ]}
               onPress={() => setSelectedFilter("missed")}
             >
               <Text
                 style={[
                   styles.filterText,
-                  selectedFilter === "missed" && styles.filterTextActive,
+                  { color: theme.text },
+                  selectedFilter === "missed" && { color: theme.error },
                 ]}
               >
                 Missed
@@ -186,252 +256,241 @@ export default function HistoryScreen() {
           style={styles.historyContainer}
           showsVerticalScrollIndicator={false}
         >
-          {groupedHistory.map(([date, doses]) => (
-            <View key={date} style={styles.dateGroup}>
-              <Text style={styles.dateHeader}>
-                {new Date(date).toLocaleDateString("default", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                })}
+          {groupedHistory.length > 0 ? (
+            groupedHistory.map(([date, doses]) => (
+              <View key={date} style={styles.dateGroup}>
+                <Text style={[styles.dateHeader, { color: theme.text }]}>
+                  {new Date(date).toLocaleDateString("default", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </Text>
+                {doses
+                  .filter((dose) => {
+                    if (selectedFilter === "all") return true;
+                    if (selectedFilter === "taken") return dose.taken;
+                    if (selectedFilter === "missed") return !dose.taken;
+                    return true;
+                  })
+                  .map((dose) => (
+                    <View
+                      key={dose.id}
+                      style={[
+                        styles.historyCard,
+                        {
+                          backgroundColor: theme.card,
+                          ...shadow.small,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.statusIndicator,
+                          {
+                            backgroundColor: dose.taken
+                              ? theme.success
+                              : theme.error,
+                          },
+                        ]}
+                      />
+                      <View style={styles.cardContent}>
+                        <View style={styles.medicationInfo}>
+                          <Text
+                            style={[styles.medicationName, { color: theme.text }]}
+                          >
+                            {dose.medication?.name || "Unknown Medication"}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.dosageText,
+                              { color: theme.textSecondary },
+                            ]}
+                          >
+                            {dose.medication?.dosage || ""}
+                          </Text>
+                        </View>
+                        <View style={styles.timeInfo}>
+                          <Text
+                            style={[
+                              styles.timeText,
+                              { color: theme.textSecondary },
+                            ]}
+                          >
+                            {new Date(dose.timestamp).toLocaleTimeString(
+                              "default",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </Text>
+                          <View
+                            style={[
+                              styles.statusBadge,
+                              {
+                                backgroundColor: dose.taken
+                                  ? theme.success + "15"
+                                  : theme.error + "15",
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.statusText,
+                                {
+                                  color: dose.taken
+                                    ? theme.success
+                                    : theme.error,
+                                },
+                              ]}
+                            >
+                              {dose.taken ? "Taken" : "Missed"}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+              </View>
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Ionicons
+                name="calendar-outline"
+                size={64}
+                color={theme.textTertiary}
+              />
+              <Text
+                style={[styles.emptyStateText, { color: theme.textSecondary }]}
+              >
+                No medication history yet
               </Text>
-              {doses.map((dose) => (
-                <View key={dose.id} style={styles.historyCard}>
-                  <View
-                    style={[
-                      styles.medicationColor,
-                      { backgroundColor: dose.medication?.color || "#ccc" },
-                    ]}
-                  />
-                  <View style={styles.medicationInfo}>
-                    <Text style={styles.medicationName}>
-                      {dose.medication?.name || "Unknown Medication"}
-                    </Text>
-                    <Text style={styles.medicationDosage}>
-                      {dose.medication?.dosage}
-                    </Text>
-                    <Text style={styles.timeText}>
-                      {new Date(dose.timestamp).toLocaleTimeString("default", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Text>
-                  </View>
-                  <View style={styles.statusContainer}>
-                    {dose.taken ? (
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          { backgroundColor: "#E8F5E9" },
-                        ]}
-                      >
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={16}
-                          color="#4CAF50"
-                        />
-                        <Text style={[styles.statusText, { color: "#4CAF50" }]}>
-                          Taken
-                        </Text>
-                      </View>
-                    ) : (
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          { backgroundColor: "#FFEBEE" },
-                        ]}
-                      >
-                        <Ionicons
-                          name="close-circle"
-                          size={16}
-                          color="#F44336"
-                        />
-                        <Text style={[styles.statusText, { color: "#F44336" }]}>
-                          Missed
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              ))}
+              <Text
+                style={[
+                  styles.emptyStateSubtext,
+                  { color: theme.textTertiary },
+                ]}
+              >
+                Your medication history will appear here once you start tracking
+                doses
+              </Text>
             </View>
-          ))}
-
-          <View style={styles.clearDataContainer}>
-            <TouchableOpacity
-              style={styles.clearDataButton}
-              onPress={handleClearAllData}
-            >
-              <Ionicons name="trash-outline" size={20} color="#FF5252" />
-              <Text style={styles.clearDataText}>Clear All Data</Text>
-            </TouchableOpacity>
-          </View>
+          )}
         </ScrollView>
+
+        <View style={styles.footer}>
+          <Button
+            title="Clear All Data"
+            onPress={handleClearAllData}
+            variant="outline"
+            icon="trash-outline"
+            style={{ borderColor: theme.error, alignSelf: "center" }}
+            textStyle={{ color: theme.error }}
+          />
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-  },
-  headerGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: Platform.OS === "ios" ? 140 : 120,
-  },
   content: {
     flex: 1,
-    paddingTop: Platform.OS === "ios" ? 50 : 30,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    zIndex: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "white",
-    marginLeft: 15,
+    paddingHorizontal: spacing.md,
   },
   filtersContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    backgroundColor: "#f8f9fa",
-    paddingTop: 10,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
   },
   filtersScroll: {
-    paddingRight: 20,
+    flexGrow: 0,
   },
   filterButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "white",
-    marginRight: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.pill,
+    marginRight: spacing.sm,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
   },
   filterButtonActive: {
-    backgroundColor: "#1a8e2d",
-    borderColor: "#1a8e2d",
+    borderWidth: 1,
   },
   filterText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#666",
+    ...typography.body,
   },
   filterTextActive: {
-    color: "white",
+    fontWeight: "bold",
   },
   historyContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    backgroundColor: "#f8f9fa",
   },
   dateGroup: {
-    marginBottom: 25,
+    marginBottom: spacing.lg,
   },
   dateHeader: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#666",
-    marginBottom: 12,
+    ...typography.subheader,
+    marginBottom: spacing.sm,
   },
   historyCard: {
+    borderRadius: borderRadius.medium,
+    marginBottom: spacing.sm,
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    overflow: "hidden",
   },
-  medicationColor: {
-    width: 12,
-    height: 40,
-    borderRadius: 6,
-    marginRight: 16,
+  statusIndicator: {
+    width: 8,
+    height: "100%",
+  },
+  cardContent: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: spacing.md,
   },
   medicationInfo: {
     flex: 1,
   },
   medicationName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
+    ...typography.title,
+    marginBottom: spacing.xs,
   },
-  medicationDosage: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 2,
+  dosageText: {
+    ...typography.body,
   },
-  timeText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  statusContainer: {
+  timeInfo: {
     alignItems: "flex-end",
   },
+  timeText: {
+    ...typography.caption,
+    marginBottom: spacing.xs,
+  },
   statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: borderRadius.pill,
   },
   statusText: {
-    marginLeft: 4,
-    fontSize: 14,
-    fontWeight: "600",
+    ...typography.caption,
+    fontWeight: "bold",
   },
-  clearDataContainer: {
-    padding: 20,
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 40,
+    paddingVertical: spacing.xl * 2,
   },
-  clearDataButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFEBEE",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#FFCDD2",
+  emptyStateText: {
+    ...typography.subheader,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
   },
-  clearDataText: {
-    color: "#FF5252",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
+  emptyStateSubtext: {
+    ...typography.body,
+    textAlign: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  footer: {
+    paddingVertical: spacing.lg,
   },
 });
